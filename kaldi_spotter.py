@@ -41,13 +41,15 @@ CONFIG = {
             "transcriptions": ["lights on"],
             "sound": None,
             "intent": "turn on lights",
-            "active": True
+            "active": True,
+            "rule": "equal"
         },
         "lights off": {
             "transcriptions": ["lights off"],
             "sound": None,
             "intent": "turn off lights",
-            "active": True
+            "active": True,
+            "rule": "equal"
         },
         "time": {
             "transcriptions": ["what time is it"],
@@ -170,10 +172,15 @@ class KaldiWWSpotter(EventEmitter):
                            "default_acoustic_scale"],
                        kaldi_frame_subsampling_factor=CONFIG["kaldi"][
                            "default_frame_subsampling_factor"])
+        self._hotwords = dict(CONFIG["hotwords"])
+
+    def add_hotword(self, name, config=None):
+        config = config or {"transcriptions": [name], "intent": name}
+        self._hotwords[name] = config
 
     @property
     def hotwords(self):
-        return CONFIG["hotwords"]
+        return self._hotwords
 
     def _detection_event(self, message_type, message_data):
         serialized_message = json.dumps(
