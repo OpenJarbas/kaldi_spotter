@@ -2,7 +2,7 @@
 
 wake word spotting with kaldi
 
-edit CONFIG in kaldi_spotter.py, # TODO make easier to configure
+
 
 - [Kaldi Spotter](#kaldi-spotter)
   * [Usage](#usage)
@@ -15,6 +15,8 @@ edit CONFIG in kaldi_spotter.py, # TODO make easier to configure
   * [Credits](#credits)
   
 ## Usage
+
+edit CONFIG in kaldi_spotter.py
 
 ```python
 from kaldi_spotter import KaldiWWSpotter
