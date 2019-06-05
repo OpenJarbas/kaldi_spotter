@@ -1,0 +1,4 @@
+pyee==5.0.0
+numpy
+cython
+py-nltools
