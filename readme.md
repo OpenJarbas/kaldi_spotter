@@ -44,9 +44,9 @@ INFO:root:Loading model from /opt/kaldi/model/kaldi-generic-en-tdnn_250 ...
 INFO:root:audio source: seeed-4mic-voicecard Multichannel
 INFO:root:Listening
 ('LIVE TRANSCRIPTION:', '{"data": {"confidence": 1.2445470094680786, "utterance": "hey computer"}, "type": "transcription"}')
-('HOTWORD:', '{"data": {"sound": null, "transcriptions": ["hey computer", "a computer", "they computer"], "hotword": "hey computer", "intent": "listen", "active": true}, "type": "hotword"}')
+('HOTWORD:', '{"data": {"hotword": "hey computer", "intent": "listen", "utterance": "hey computer"}, "type": "hotword"}')
 ('LIVE TRANSCRIPTION:', '{"data": {"confidence": 1.3947328329086304, "utterance": "what time is it"}, "type": "transcription"}')
-('HOTWORD:', '{"data": {"sound": null, "rule": "equal", "transcriptions": ["what time is it"], "hotword": "time", "intent": "what time is it", "active": true}, "type": "hotword"}')
+('HOTWORD:', '{"data": {"hotword": "time", "intent": "current time", "utterance": "what time is it"}, "type": "hotword"}')
 
 ```
 

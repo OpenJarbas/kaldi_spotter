@@ -52,7 +52,7 @@ CONFIG = {
         "time": {
             "transcriptions": ["what time is it"],
             "sound": None,
-            "intent": "what time is it",
+            "intent": "current time",
             "active": True,
             "rule": "equal"
         },
@@ -186,17 +186,15 @@ class KaldiWWSpotter(EventEmitter):
             if not self.hotwords[hotw].get("active"):
                 continue
             rule = self.hotwords[hotw].get("rule", "in")
-
             for w in self.hotwords[hotw]["transcriptions"]:
-
-                data = self.hotwords[hotw]
-                data["hotword"] = hotw
-
                 if (w in user_utt and rule == "in") or \
                         (user_utt.startswith(w) and rule == "start") or \
                         (user_utt.endswith(w) and rule == "end") or \
                         (w == user_utt and rule == "equal"):
-                    self._detection_event("hotword", data)
+                    self._detection_event("hotword",
+                                          {"hotword": hotw,
+                                           "utterance": user_utt,
+                                           "intent": self.hotwords[hotw]["intent"]})
 
     def run(self):
 
