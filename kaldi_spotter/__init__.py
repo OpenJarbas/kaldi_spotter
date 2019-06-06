@@ -41,7 +41,8 @@ class KaldiWWSpotter(EventEmitter):
         if not isfile(model_dir):
             if model_dir in self._default_models:
                 logging.error("you need to install the package: "
-                    "kaldi-chain-zamia-speech-{lang}".format(lang=self.lang))
+                              "kaldi-chain-zamia-speech-{lang}".format(
+                    lang=self.lang))
             raise ModelNotFound
 
         self.rec = PulseRecorder(source_name=source, volume=volume)
@@ -74,7 +75,7 @@ class KaldiWWSpotter(EventEmitter):
         logging.debug(serialized_message)
         self.emit(message_type, serialized_message)
 
-    def process_transcription(self, user_utt, confidence=0.99):
+    def _process_transcription(self, user_utt, confidence=0.99):
         for hotw in self.hotwords:
             if not self.hotwords[hotw].get("active"):
                 continue
@@ -86,16 +87,29 @@ class KaldiWWSpotter(EventEmitter):
                 if (w in user_utt and rule == "in") or \
                         (user_utt.startswith(w) and rule == "start") or \
                         (user_utt.endswith(w) and rule == "end") or \
-                        (fuzzy_match(w, user_utt) >= s and rule == "sensitivity") or \
+                        (fuzzy_match(w,
+                                     user_utt) >= s and rule == "sensitivity") or \
                         (w == user_utt and rule == "equal"):
-                    sound = self.hotwords[hotw].get("sound")
-                    if sound and isfile(sound):
-                        play_sound(sound)
-                    self._detection_event("hotword",
-                                          {"hotword": hotw,
-                                           "utterance": user_utt,
-                                           "confidence": confidence,
-                                           "intent": self.hotwords[hotw]["intent"]})
+                    yield {"hotword": hotw,
+                           "utterance": user_utt,
+                           "confidence": confidence,
+                           "intent": self.hotwords[hotw]["intent"]}
+
+    def _detect_ww(self, user_utt, confidence=0.99):
+        for hw_data in self._process_transcription(user_utt, confidence):
+            sound = self.hotwords[hw_data["hotword"]].get("sound")
+            if sound and isfile(sound):
+                play_sound(sound)
+            self._detection_event("hotword", hw_data)
+
+    def decode_wav_file(self, wav_file):
+        user_utt, confidence = self.asr.decode_wav_file(wav_file)
+        confidence = 1 - exp(-1 * confidence)
+        return user_utt, confidence
+
+    def wav_file_hotwords(self, wav_file):
+        user_utt, confidence = self.decode_wav_file(wav_file)
+        return list(self._process_transcription(user_utt, confidence))
 
     def run(self):
 
@@ -121,4 +135,4 @@ class KaldiWWSpotter(EventEmitter):
                 self._detection_event("transcription",
                                       {"utterance": user_utt,
                                        "confidence": confidence})
-                self.process_transcription(user_utt, confidence)
+                self._detect_ww(user_utt, confidence)
