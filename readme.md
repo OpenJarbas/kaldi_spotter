@@ -2,8 +2,6 @@
 
 wake word spotting with kaldi
 
-
-
 - [Kaldi Spotter](#kaldi-spotter)
   * [Usage](#usage)
     + [Sample Output](#sample-output)
@@ -30,7 +28,6 @@ def print_utterance(event):
 
 
 listener = KaldiWWSpotter()
-listener.initialize()
 listener.on("transcription", print_utterance)
 listener.on("hotword", print_hotword)
 listener.run()

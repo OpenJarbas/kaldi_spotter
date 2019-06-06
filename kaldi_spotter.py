@@ -4,7 +4,7 @@
 # listening config
 CONFIG = {
     # kaldi config
-    "kaldi": {
+    "listener": {
         "default_volume": 150,
         "default_aggressiveness": 2,
         "default_model_dir": '/opt/kaldi/model/kaldi-generic-en-tdnn_250',
@@ -95,7 +95,7 @@ CONFIG = {
         "hey robin": {
             # seems to struggle with this one
             "transcriptions": ["hey rob him", "hey rob in", "hey robin",
-                               "hey rob it", "hey rob"],
+                               "hey rob it", "hey rob", "a robin"],
             "sound": None,
             "intent": "listen",
             "active": True
@@ -156,21 +156,21 @@ import json
 
 
 class KaldiWWSpotter(EventEmitter):
-    def initialize(self,
+    def __init__(self,
                    source=None,
-                   volume=CONFIG["kaldi"]["default_volume"],
-                   aggressiveness=CONFIG["kaldi"]["default_aggressiveness"],
-                   model_dir=CONFIG["kaldi"]["default_model_dir"]):
-
+                   volume=CONFIG["listener"]["default_volume"],
+                   aggressiveness=CONFIG["listener"]["default_aggressiveness"],
+                   model_dir=CONFIG["listener"]["default_model_dir"]):
+        EventEmitter.__init__(self)
         self.rec = PulseRecorder(source_name=source, volume=volume)
         self.vad = VAD(aggressiveness=aggressiveness)
         logging.info("Loading model from %s ..." % model_dir)
 
         self.asr = ASR(engine=ASR_ENGINE_NNET3, model_dir=model_dir,
-                       kaldi_beam=CONFIG["kaldi"]["default_beam"],
-                       kaldi_acoustic_scale=CONFIG["kaldi"][
+                       kaldi_beam=CONFIG["listener"]["default_beam"],
+                       kaldi_acoustic_scale=CONFIG["listener"][
                            "default_acoustic_scale"],
-                       kaldi_frame_subsampling_factor=CONFIG["kaldi"][
+                       kaldi_frame_subsampling_factor=CONFIG["listener"][
                            "default_frame_subsampling_factor"])
         self._hotwords = dict(CONFIG["hotwords"])
 
@@ -235,14 +235,14 @@ if __name__ == "__main__":
 
     parser.add_option("-a", "--aggressiveness", dest="aggressiveness",
                       type="int",
-                      default=CONFIG["kaldi"]["default_aggressiveness"],
+                      default=CONFIG["listener"]["default_aggressiveness"],
                       help="VAD aggressiveness, default: %d" %
-                           CONFIG["kaldi"]["default_aggressiveness"])
+                           CONFIG["listener"]["default_aggressiveness"])
 
     parser.add_option("-m", "--model-dir", dest="model_dir", type="string",
-                      default=CONFIG["kaldi"]["default_model_dir"],
+                      default=CONFIG["listener"]["default_model_dir"],
                       help="kaldi model directory, default: %s" %
-                           CONFIG["kaldi"]["default_model_dir"])
+                           CONFIG["listener"]["default_model_dir"])
 
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
                       help="verbose output")
@@ -252,8 +252,8 @@ if __name__ == "__main__":
                       help="pulseaudio source, default: auto-detect mic")
 
     parser.add_option("-V", "--volume", dest="volume", type="int",
-                      default=CONFIG["kaldi"]["default_volume"],
-                      help="broker port, default: %d" % CONFIG["kaldi"][
+                      default=CONFIG["listener"]["default_volume"],
+                      help="broker port, default: %d" % CONFIG["listener"][
                           "default_volume"])
 
     (options, args) = parser.parse_args()
@@ -277,8 +277,7 @@ if __name__ == "__main__":
         print("LIVE TRANSCRIPTION:", event)
 
 
-    listener = KaldiWWSpotter()
-    listener.initialize(source, volume, aggressiveness, model_dir)
+    listener = KaldiWWSpotter(source, volume, aggressiveness, model_dir)
     listener.on("transcription", print_utterance)
     listener.on("hotword", print_hotword)
 
