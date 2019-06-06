@@ -10,11 +10,13 @@ wake word spotting with kaldi
     + [CLI](#cli)
     + [Sample Output](#sample-output)
   * [Install](#install)
-    + [Raspbian 9 (stretch) on a Raspberry Pi 2/3](#raspbian-9--stretch--on-a-raspberry-pi-2-3)
-    + [Debian 9 (stretch, amd64)](#debian-9--stretch--amd64-)
-    + [CentOS 7 (amd64)](#centos-7--amd64-)
+    + [System Requirements](#system-requirements)
+    + [Pre-trained models](#pre-trained-models)
+      - [Raspbian 9 (stretch) on a Raspberry Pi 2/3](#raspbian-9--stretch--on-a-raspberry-pi-2-3)
+      - [Debian 9 (stretch, amd64)](#debian-9--stretch--amd64-)
+      - [CentOS 7 (amd64)](#centos-7--amd64-)
+    + [Pip Package](#pip-package)
   * [Credits](#credits)
-
   
 ## Usage
 
@@ -119,7 +121,7 @@ INFO:root:Listening
 ### System Requirements
 
 ```bash
-sudo apt-get install libatlas-dev pulseaudio-utils pulseaudio
+sudo apt-get install libatlas-dev pulseaudio-utils pulseaudio cython
 ```
 
 ### Pre-trained models
