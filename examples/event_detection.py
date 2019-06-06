@@ -17,11 +17,11 @@ CONFIG = {
             "sound": None,
             "intent": "greeting",
             "active": True,
-
-            # in - anywhere in utterance (default)
+            # in - anywhere in utterance
             # start - start of utterance
             # end - end of utterance
             # equal - exact match
+            # sensitivity - fuzzy match and score transcription (error tolerant) <- default
             "rule": "start"
         },
         "thank you": {
@@ -40,7 +40,11 @@ CONFIG = {
             "sound": None,
             "intent": "turn on lights",
             "active": True,
-            "rule": "equal"
+            "sensitivity": 0.2,
+            # if score > 1 - sensitivity -> detection
+            # hey computer * a computer == 0.8181818181818182
+            # "hey mycroft" * "hey microsoft" == 0.8333333333333334
+            "rule": "sensitivity"
         },
         "lights off": {
             "transcriptions": ["lights off"],

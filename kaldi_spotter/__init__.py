@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from kaldi_spotter.settings import CONFIG
-from kaldi_spotter.utils import play_sound
+from kaldi_spotter.utils import play_sound, fuzzy_match
 import logging
 from nltools.pulserecorder import PulseRecorder
 from nltools.vad import VAD, BUFFER_DURATION
@@ -63,11 +63,14 @@ class KaldiWWSpotter(EventEmitter):
         for hotw in self.hotwords:
             if not self.hotwords[hotw].get("active"):
                 continue
-            rule = self.hotwords[hotw].get("rule", "in")
+            rule = self.hotwords[hotw].get("rule", "sensitivity")
+            s = 1 - self.hotwords[hotw].get("sensitivity", 0.2)
             for w in self.hotwords[hotw]["transcriptions"]:
+
                 if (w in user_utt and rule == "in") or \
                         (user_utt.startswith(w) and rule == "start") or \
                         (user_utt.endswith(w) and rule == "end") or \
+                        (fuzzy_match(w, user_utt) >= s and rule == "sensitivity") or \
                         (w == user_utt and rule == "equal"):
                     sound = self.hotwords[hotw].get("sound")
                     if sound and isfile(sound):
@@ -75,8 +78,7 @@ class KaldiWWSpotter(EventEmitter):
                     self._detection_event("hotword",
                                           {"hotword": hotw,
                                            "utterance": user_utt,
-                                           "intent": self.hotwords[hotw][
-                                               "intent"]})
+                                           "intent": self.hotwords[hotw]["intent"]})
 
     def run(self):
 

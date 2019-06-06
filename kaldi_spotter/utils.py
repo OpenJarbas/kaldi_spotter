@@ -14,6 +14,16 @@
 #
 import json
 import subprocess
+from difflib import SequenceMatcher
+
+
+def fuzzy_match(x, against):
+    """Perform a 'fuzzy' comparison between two strings.
+    Returns:
+        float: match percentage -- 1.0 for perfect match,
+               down to 0.0 for no match at all.
+    """
+    return SequenceMatcher(None, x, against).ratio()
 
 
 def play_mp3(mp3_file, play_cmd="mpg123 -q %1", blocking=False):
