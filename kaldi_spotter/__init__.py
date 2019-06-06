@@ -9,6 +9,7 @@ from nltools.asr import ASR, ASR_ENGINE_NNET3
 from optparse import OptionParser
 from pyee import EventEmitter
 import json
+from math import exp
 
 
 class KaldiWWSpotter(EventEmitter):
@@ -78,7 +79,7 @@ class KaldiWWSpotter(EventEmitter):
 
             user_utt, confidence = self.asr.decode(audio, finalize,
                                                    stream_id="mic")
-
+            confidence = 1 - exp(-1 * confidence)
             if finalize and user_utt:
                 self._detection_event("transcription",
                                       {"utterance": user_utt,
