@@ -6,7 +6,8 @@ wake word spotting with kaldi
   * [Usage](#usage)
     + [Config](#config)
       - [Sample Config](#sample-config)
-    + [Code](#code)
+    + [Python](#python)
+    + [CLI](#cli)
     + [Sample Output](#sample-output)
   * [Install](#install)
     + [Raspbian 9 (stretch) on a Raspberry Pi 2/3](#raspbian-9--stretch--on-a-raspberry-pi-2-3)
@@ -70,7 +71,7 @@ overriding values from the previous one
 }
 ```
 
-### Code
+### Python
 
 see [examples](./examples)
 
@@ -91,10 +92,18 @@ listener.on("hotword", print_hotword)
 listener.run()
 ``` 
 
+### CLI
+
+Start kaldi spotter from cli
+
+```bash
+python -m kaldi_spotter
+```
+
 ### Sample Output
 
 ```bash
-pi@raspberrypi:~ $ python kaldi_spotter.py 
+pi@raspberrypi:~ $ python -m kaldi_spotter
 INFO:root:Loading model from /opt/kaldi/model/kaldi-generic-en-tdnn_250 ...
 INFO:root:audio source: seeed-4mic-voicecard Multichannel
 INFO:root:Listening
@@ -107,33 +116,54 @@ INFO:root:Listening
 
 ## Install
 
-### Raspbian 9 (stretch) on a Raspberry Pi 2/3
+### System Requirements
+
+```bash
+sudo apt-get install libatlas-dev pulseaudio-utils pulseaudio
+```
+
+### Pre-trained models
+
+You can install English model ```kaldi-chain-zamia-speech-en``` or german model ```kaldi-chain-zamia-speech-de```
+
+Refered as ```kaldi-chain-zamia-speech-XX``` bellow
+
+#### Raspbian 9 (stretch) on a Raspberry Pi 2/3
 ```bash
 echo "deb http://goofy.zamia.org/repo-ai/raspbian/stretch/armhf/ ./" >/etc/apt/sources.list.d/zamia-ai.list
 wget -qO - http://goofy.zamia.org/repo-ai/raspbian/stretch/armhf/bofh.asc | sudo apt-key add -
 apt-get update
-apt-get install libatlas-dev kaldi-chain-zamia-speech-en pulseaudio-utils pulseaudio
-pip install kaldi_spotter
+apt-get install kaldi-chain-zamia-speech-XX
 ```
 
-### Debian 9 (stretch, amd64)
+#### Debian 9 (stretch, amd64)
 ```bash
 apt-get install apt-transport-https
 echo "deb http://goofy.zamia.org/repo-ai/debian/stretch/amd64/ ./" >/etc/apt/sources.list.d/zamia-ai.list
 wget -qO - http://goofy.zamia.org/repo-ai/debian/stretch/amd64/bofh.asc | sudo apt-key add -
 apt-get update
-apt-get install libatlas-dev kaldi-chain-zamia-speech-en pulseaudio-utils 
-pulseaudio
-pip install kaldi_spotter
+apt-get install kaldi-chain-zamia-speech-XX
 ```
 
-
-### CentOS 7 (amd64)
+#### CentOS 7 (amd64)
 ```bash
 cd /etc/yum.repos.d
 wget http://goofy.zamia.org/zamia-speech/misc/zamia-ai-centos.repo
-yum install kaldi-chain-zamia-speech-en pulseaudio-utils pulseaudio
+yum install kaldi-chain-zamia-speech-XX
+```
+
+### Pip Package
+
+install from pip
+
+```bash
 pip install kaldi_spotter
+```
+
+or from source
+
+```bash
+pip install git+https://github.com/JarbasAl/kaldi_spotter
 ```
 
 ## Credits
