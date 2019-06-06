@@ -28,7 +28,7 @@ overriding values from the previous one
     
 #### Sample Config
 
-```json
+```json5
 {
     # kaldi config
     "listener": {
