@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from kaldi_spotter.settings import CONFIG
 from kaldi_spotter.utils import play_sound, fuzzy_match
+from kaldi_spotter.exceptions import ModelNotFound
 import logging
 from nltools.pulserecorder import PulseRecorder
 from nltools.vad import VAD, BUFFER_DURATION
@@ -13,6 +14,9 @@ from os.path import isfile
 
 
 class KaldiWWSpotter(EventEmitter):
+    _default_models = ["/opt/kaldi/model/kaldi-generic-en-tdnn_250",
+                       "/opt/kaldi/model/kaldi-generic-de-tdnn_250"]
+
     def __init__(self, source=None, volume=None, aggressiveness=None,
                  model_dir=None, lang=None, config=CONFIG):
         EventEmitter.__init__(self)
@@ -28,8 +32,18 @@ class KaldiWWSpotter(EventEmitter):
             "default_aggressiveness"]
         model_dir = model_dir or self.config["listener"]["default_model_dir"]
         self.lang = lang or self.config["lang"]
+        if "-" in self.lang:
+            self.lang = self.lang.split("-")[0]
+
         if "{lang}" in model_dir:
             model_dir = model_dir.format(lang=self.lang)
+
+        if not isfile(model_dir):
+            if model_dir in self._default_models:
+                logging.error("you need to install the package: "
+                    "kaldi-chain-zamia-speech-{lang}".format(lang=self.lang))
+            raise ModelNotFound
+
         self.rec = PulseRecorder(source_name=source, volume=volume)
         self.vad = VAD(aggressiveness=aggressiveness)
         logging.info("Loading model from %s ..." % model_dir)
