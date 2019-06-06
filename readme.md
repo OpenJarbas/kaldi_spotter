@@ -12,7 +12,6 @@ wake word spotting with kaldi
     + [Raspbian 9 (stretch) on a Raspberry Pi 2/3](#raspbian-9--stretch--on-a-raspberry-pi-2-3)
     + [Debian 9 (stretch, amd64)](#debian-9--stretch--amd64-)
     + [CentOS 7 (amd64)](#centos-7--amd64-)
-  * [TODO](#todo)
   * [Credits](#credits)
 
   
@@ -30,7 +29,6 @@ overriding values from the previous one
 
 ```json5
 {
-    # kaldi config
     "listener": {
         "default_volume": 150,
         "default_aggressiveness": 2,
@@ -40,25 +38,6 @@ overriding values from the previous one
         "default_frame_subsampling_factor": 3,
     },
     "hotwords": {
-        # simple commands
-        "hello": {
-            "transcriptions": ["hello"],
-            "sound": None,
-            "intent": "greeting",
-            "active": True,
-
-            # in - anywhere in utterance (default)
-            # start - start of utterance
-            # end - end of utterance
-            # equal - exact match
-            "rule": "start"
-        },
-        "thank you": {
-            "transcriptions": ["thank you"],
-            "sound": None,
-            "intent": "thank",
-            "active": True
-        },
         # full sentences
         # CRITERIA
         # - fairly accurate,
@@ -66,108 +45,26 @@ overriding values from the previous one
         # - worth answering even if speech not directed at device
         "lights on": {
             "transcriptions": ["lights on"],
-            "sound": None,
             "intent": "turn on lights",
-            "active": True,
             "rule": "equal"
         },
         "lights off": {
             "transcriptions": ["lights off"],
-            "sound": None,
             "intent": "turn off lights",
-            "active": True,
             "rule": "equal"
         },
         "time": {
             "transcriptions": ["what time is it"],
-            "sound": None,
             "intent": "current time",
-            "active": True,
+            "active": false,
             "rule": "equal"
         },
-        "weather": {
-            "transcriptions": ["what's the weather like",
-                               "what's the weather life",
-                               "what is the weather like",
-                               "what is the weather life",
-                               "what the weather like"],
-            "sound": None,
-            "intent": "weather forecast",
-            "active": True,
-            "rule": "equal"
-        },
-
         # wake words
         # PROTIP: just run the live demo and see which transcriptions come up
-        "christopher": {
-            "transcriptions": ["christopher"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey marty": {
-            "transcriptions": ["hey marty"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey mycroft": {
-            # not in language model
-            "transcriptions": ["hey mike off", "hey microsoft",
-                               "hey migrants"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey robin": {
-            # seems to struggle with this one
-            "transcriptions": ["hey rob him", "hey rob in", "hey robin",
-                               "hey rob it", "hey rob", "a robin"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey mike": {
-            "transcriptions": ["hey mike"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey joe": {
-            "transcriptions": ["hey joe"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey johnnie": {
-            "transcriptions": ["hey johnnie"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey jonathan": {
-            "transcriptions": ["hey jonathan"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey bob": {
-            "transcriptions": ["hey bob"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
-        "hey lex": {
-            "transcriptions": ["hey lex"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
-        },
         "hey computer": {
             "transcriptions": ["hey computer", "a computer", "they computer"],
-            "sound": None,
-            "intent": "listen",
-            "active": True
+            "sound": "/home/pi/start_listening.wav",
+            "intent": "listen"
         }
     }
 }
@@ -204,7 +101,7 @@ INFO:root:Listening
 ('LIVE TRANSCRIPTION:', '{"data": {"confidence": 0.7698909431952632, "utterance": "hey computer"}, "type": "transcription"}')
 ('HOTWORD:', '{"data": {"hotword": "hey computer", "utterance": "hey computer", "intent": "listen"}, "type": "hotword"}')
 ('LIVE TRANSCRIPTION:', '{"data": {"confidence": 0.7663563699360755, "utterance": "what time is it"}, "type": "transcription"}')
-('HOTWORD:', '{"data": {"hotword": "time", "utterance": "what time is it", "intent": "what time is it"}, "type": "hotword"}')
+('HOTWORD:', '{"data": {"hotword": "time", "utterance": "what time is it", "intent": "current time"}, "type": "hotword"}')
 
 ```
 
@@ -215,8 +112,8 @@ INFO:root:Listening
 echo "deb http://goofy.zamia.org/repo-ai/raspbian/stretch/armhf/ ./" >/etc/apt/sources.list.d/zamia-ai.list
 wget -qO - http://goofy.zamia.org/repo-ai/raspbian/stretch/armhf/bofh.asc | sudo apt-key add -
 apt-get update
-apt-get install kaldi-chain-zamia-speech-de kaldi-chain-zamia-speech-en python-kaldiasr python-nltools pulseaudio-utils pulseaudio
-pip install pyee
+apt-get install libatlas-dev kaldi-chain-zamia-speech-en pulseaudio-utils pulseaudio
+pip install kaldi_spotter
 ```
 
 ### Debian 9 (stretch, amd64)
@@ -225,8 +122,9 @@ apt-get install apt-transport-https
 echo "deb http://goofy.zamia.org/repo-ai/debian/stretch/amd64/ ./" >/etc/apt/sources.list.d/zamia-ai.list
 wget -qO - http://goofy.zamia.org/repo-ai/debian/stretch/amd64/bofh.asc | sudo apt-key add -
 apt-get update
-apt-get install kaldi-chain-zamia-speech-de kaldi-chain-zamia-speech-en python-kaldiasr python-nltools pulseaudio-utils pulseaudio
-pip install pyee
+apt-get install libatlas-dev kaldi-chain-zamia-speech-en pulseaudio-utils 
+pulseaudio
+pip install kaldi_spotter
 ```
 
 
@@ -234,14 +132,9 @@ pip install pyee
 ```bash
 cd /etc/yum.repos.d
 wget http://goofy.zamia.org/zamia-speech/misc/zamia-ai-centos.repo
-yum install kaldi-chain-zamia-speech-de kaldi-chain-zamia-speech-en python-kaldiasr python-nltools pulseaudio-utils pulseaudio
-pip install pyee
+yum install kaldi-chain-zamia-speech-en pulseaudio-utils pulseaudio
+pip install kaldi_spotter
 ```
-
-## TODO
-
-- allow passing config in constructor
-- setup.py + pip package
 
 ## Credits
 

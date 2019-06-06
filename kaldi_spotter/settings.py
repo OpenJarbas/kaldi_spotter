@@ -2,7 +2,6 @@ from os.path import isfile, expanduser
 from kaldi_spotter.utils import load_commented_json, merge_dict
 
 CONFIG = {
-    # kaldi config
     "listener": {
         "default_volume": 150,
         "default_aggressiveness": 2,
@@ -22,3 +21,7 @@ _paths = [
 for p in _paths:
     if isfile(p):
         merge_dict(CONFIG, load_commented_json(p))
+
+
+
+

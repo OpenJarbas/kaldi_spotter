@@ -14,23 +14,32 @@ from os.path import isfile
 
 
 class KaldiWWSpotter(EventEmitter):
-    def __init__(self,
-                   source=None,
-                   volume=CONFIG["listener"]["default_volume"],
-                   aggressiveness=CONFIG["listener"]["default_aggressiveness"],
-                   model_dir=CONFIG["listener"]["default_model_dir"]):
+    def __init__(self, source=None, volume=None, aggressiveness=None,
+                 model_dir=None, config=CONFIG):
         EventEmitter.__init__(self)
+        self.config = config
+
+        # ensure default values
+        for k in CONFIG["listener"]:
+            if k not in self.config["listener"]:
+                self.config["listener"][k] = CONFIG["listener"][k]
+
+        volume = volume or self.config["listener"]["default_volume"]
+        aggressiveness = aggressiveness or self.config["listener"][
+            "default_aggressiveness"]
+        model_dir = model_dir or self.config["listener"]["default_model_dir"]
+
         self.rec = PulseRecorder(source_name=source, volume=volume)
         self.vad = VAD(aggressiveness=aggressiveness)
         logging.info("Loading model from %s ..." % model_dir)
 
         self.asr = ASR(engine=ASR_ENGINE_NNET3, model_dir=model_dir,
-                       kaldi_beam=CONFIG["listener"]["default_beam"],
-                       kaldi_acoustic_scale=CONFIG["listener"][
+                       kaldi_beam=self.config["listener"]["default_beam"],
+                       kaldi_acoustic_scale=self.config["listener"][
                            "default_acoustic_scale"],
-                       kaldi_frame_subsampling_factor=CONFIG["listener"][
+                       kaldi_frame_subsampling_factor=self.config["listener"][
                            "default_frame_subsampling_factor"])
-        self._hotwords = dict(CONFIG["hotwords"])
+        self._hotwords = dict(self.config["hotwords"])
 
     def add_hotword(self, name, config=None):
         config = config or {"transcriptions": [name], "intent": name}
@@ -62,7 +71,8 @@ class KaldiWWSpotter(EventEmitter):
                     self._detection_event("hotword",
                                           {"hotword": hotw,
                                            "utterance": user_utt,
-                                           "intent": self.hotwords[hotw]["intent"]})
+                                           "intent": self.hotwords[hotw][
+                                               "intent"]})
 
     def run(self):
 
