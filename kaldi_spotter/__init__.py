@@ -45,6 +45,10 @@ class KaldiWWSpotter(EventEmitter):
         config = config or {"transcriptions": [name], "intent": name}
         self._hotwords[name] = config
 
+    def remove_hotword(self, name):
+        if name in self._hotwords.keys():
+            self._hotwords.pop(name)
+
     @property
     def hotwords(self):
         return self._hotwords
