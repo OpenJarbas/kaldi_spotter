@@ -14,7 +14,7 @@ from os.path import isfile
 
 class KaldiWWSpotter(EventEmitter):
     def __init__(self, source=None, volume=None, aggressiveness=None,
-                 model_dir=None, config=CONFIG):
+                 model_dir=None, lang=None, config=CONFIG):
         EventEmitter.__init__(self)
         self.config = config
 
@@ -27,7 +27,9 @@ class KaldiWWSpotter(EventEmitter):
         aggressiveness = aggressiveness or self.config["listener"][
             "default_aggressiveness"]
         model_dir = model_dir or self.config["listener"]["default_model_dir"]
-
+        self.lang = lang or self.config["lang"]
+        if "{lang}" in model_dir:
+            model_dir = model_dir.format(lang=self.lang)
         self.rec = PulseRecorder(source_name=source, volume=volume)
         self.vad = VAD(aggressiveness=aggressiveness)
         logging.info("Loading model from %s ..." % model_dir)
