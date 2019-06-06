@@ -201,10 +201,10 @@ pi@raspberrypi:~ $ python kaldi_spotter.py
 INFO:root:Loading model from /opt/kaldi/model/kaldi-generic-en-tdnn_250 ...
 INFO:root:audio source: seeed-4mic-voicecard Multichannel
 INFO:root:Listening
-('LIVE TRANSCRIPTION:', '{"data": {"confidence": 1.2445470094680786, "utterance": "hey computer"}, "type": "transcription"}')
-('HOTWORD:', '{"data": {"hotword": "hey computer", "intent": "listen", "utterance": "hey computer"}, "type": "hotword"}')
-('LIVE TRANSCRIPTION:', '{"data": {"confidence": 1.3947328329086304, "utterance": "what time is it"}, "type": "transcription"}')
-('HOTWORD:', '{"data": {"hotword": "time", "intent": "current time", "utterance": "what time is it"}, "type": "hotword"}')
+('LIVE TRANSCRIPTION:', '{"data": {"confidence": 0.7698909431952632, "utterance": "hey computer"}, "type": "transcription"}')
+('HOTWORD:', '{"data": {"hotword": "hey computer", "utterance": "hey computer", "intent": "listen"}, "type": "hotword"}')
+('LIVE TRANSCRIPTION:', '{"data": {"confidence": 0.7663563699360755, "utterance": "what time is it"}, "type": "transcription"}')
+('HOTWORD:', '{"data": {"hotword": "time", "utterance": "what time is it", "intent": "what time is it"}, "type": "hotword"}')
 
 ```
 
@@ -241,7 +241,6 @@ pip install pyee
 ## TODO
 
 - allow passing config in constructor
-- play sound util (on detection) or deprecate that field in config
 - setup.py + pip package
 
 ## Credits

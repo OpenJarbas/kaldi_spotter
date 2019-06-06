@@ -13,6 +13,26 @@
 # limitations under the License.
 #
 import json
+import subprocess
+
+
+def play_mp3(mp3_file, play_cmd="mpg123 -q %1", blocking=False):
+    return play_sound(mp3_file, play_cmd, blocking)
+
+
+def play_wav(wav_file, play_cmd="aplay %1", blocking=False):
+    return play_sound(wav_file, play_cmd, blocking)
+
+
+def play_sound(sound_file, play_cmd="paplay %1", blocking=False):
+    play_sound_cmd = str(play_cmd).split(" ")
+    for index, cmd in enumerate(play_sound_cmd):
+        if cmd == "%1":
+            play_sound_cmd[index] = sound_file
+    if blocking:
+        return subprocess.call(play_sound_cmd)
+    else:
+        return subprocess.Popen(play_sound_cmd)
 
 
 def merge_dict(base, delta):

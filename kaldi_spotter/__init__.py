@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from kaldi_spotter.settings import CONFIG
-
+from kaldi_spotter.utils import play_sound
 import logging
 from nltools.pulserecorder import PulseRecorder
 from nltools.vad import VAD, BUFFER_DURATION
@@ -10,6 +10,7 @@ from optparse import OptionParser
 from pyee import EventEmitter
 import json
 from math import exp
+from os.path import isfile
 
 
 class KaldiWWSpotter(EventEmitter):
@@ -55,6 +56,9 @@ class KaldiWWSpotter(EventEmitter):
                         (user_utt.startswith(w) and rule == "start") or \
                         (user_utt.endswith(w) and rule == "end") or \
                         (w == user_utt and rule == "equal"):
+                    sound = self.hotwords[hotw].get("sound")
+                    if sound and isfile(sound):
+                        play_sound(sound)
                     self._detection_event("hotword",
                                           {"hotword": hotw,
                                            "utterance": user_utt,
