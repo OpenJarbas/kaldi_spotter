@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='kaldi_spotter',
-    version='0.1.4',
+    version='0.1.5',
     packages=['kaldi_spotter'],
     url='https://github.com/JarbasAl/kaldi_spotter',
     install_requires=["pyee==5.0.0", "numpy", "cython", "py-nltools"],

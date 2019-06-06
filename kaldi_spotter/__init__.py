@@ -59,12 +59,13 @@ class KaldiWWSpotter(EventEmitter):
         logging.debug(serialized_message)
         self.emit(message_type, serialized_message)
 
-    def process_transcription(self, user_utt):
+    def process_transcription(self, user_utt, confidence=1):
         for hotw in self.hotwords:
             if not self.hotwords[hotw].get("active"):
                 continue
             rule = self.hotwords[hotw].get("rule", "sensitivity")
             s = 1 - self.hotwords[hotw].get("sensitivity", 0.2)
+            confidence = (confidence + s) / 2
             for w in self.hotwords[hotw]["transcriptions"]:
 
                 if (w in user_utt and rule == "in") or \
@@ -78,6 +79,7 @@ class KaldiWWSpotter(EventEmitter):
                     self._detection_event("hotword",
                                           {"hotword": hotw,
                                            "utterance": user_utt,
+                                           "confidence": confidence,
                                            "intent": self.hotwords[hotw]["intent"]})
 
     def run(self):
@@ -104,7 +106,7 @@ class KaldiWWSpotter(EventEmitter):
                 self._detection_event("transcription",
                                       {"utterance": user_utt,
                                        "confidence": confidence})
-                self.process_transcription(user_utt)
+                self.process_transcription(user_utt, confidence)
 
 
 if __name__ == "__main__":
