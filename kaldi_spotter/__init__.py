@@ -10,7 +10,7 @@ from nltools.asr import ASR, ASR_ENGINE_NNET3
 from pyee import EventEmitter
 import json
 from math import exp
-from os.path import isfile
+from os.path import isdir
 
 
 class KaldiWWSpotter(EventEmitter):
@@ -38,7 +38,7 @@ class KaldiWWSpotter(EventEmitter):
         if "{lang}" in model_dir:
             model_dir = model_dir.format(lang=self.lang)
 
-        if not isfile(model_dir):
+        if not isdir(model_dir):
             if model_dir in self._default_models:
                 logging.error("you need to install the package: "
                               "kaldi-chain-zamia-speech-{lang}".format(
