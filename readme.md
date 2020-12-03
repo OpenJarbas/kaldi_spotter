@@ -3,42 +3,22 @@
 wake word spotting with kaldi
 
 - [Kaldi Spotter](#kaldi-spotter)
+  * [Config](#config)
   * [Usage](#usage)
-    + [Config](#config)
-      - [Sample Config](#sample-config)
-    + [Python](#python)
-    + [CLI](#cli)
     + [Sample Output](#sample-output)
   * [Install](#install)
-    + [System Requirements](#system-requirements)
     + [Pre-trained models](#pre-trained-models)
-      - [Raspbian 9 (stretch) on a Raspberry Pi 2/3](#raspbian-9--stretch--on-a-raspberry-pi-2-3)
-      - [Debian 9 (stretch, amd64)](#debian-9--stretch--amd64-)
-      - [CentOS 7 (amd64)](#centos-7--amd64-)
-    + [Pip Package](#pip-package)
-  * [Credits](#credits)
   
-## Usage
 
-### Config
-
-Configuration is loaded from the following locations, with each location 
-overriding values from the previous one
-
-    "/opt/kaldi_spotter/kaldi_spotter.conf"
-    "~/.kaldi_spotter/kaldi_spotter.conf"
-    
-#### Sample Config
+## Config
 
 ```json5
 {
     "listener": {
-        "default_volume": 150,
-        "default_aggressiveness": 2,
-        "default_model_dir": "/opt/kaldi/model/kaldi-generic-en-tdnn_250",
-        "default_acoustic_scale": 1.0,
-        "default_beam": 7.0,
-        "default_frame_subsampling_factor": 3
+        "vad_agressiveness": 2,
+        "sample_rate": 16000,
+        "start_thresh": 1,
+        "end_thresh": 3
     },
     "hotwords": {
         # full sentences
@@ -73,7 +53,8 @@ overriding values from the previous one
 }
 ```
 
-### Python
+## Usage
+
 
 see [examples](./examples)
 
@@ -87,20 +68,12 @@ def print_hotword(event):
 def print_utterance(event):
     print("LIVE TRANSCRIPTION:", event)
 
-
-listener = KaldiWWSpotter()
+config = {"model_folder": "path_to_folder"}
+listener = KaldiWWSpotter(config)
 listener.on("transcription", print_utterance)
 listener.on("hotword", print_hotword)
 listener.run()
 ``` 
-
-### CLI
-
-Start kaldi spotter from cli
-
-```bash
-python -m kaldi_spotter
-```
 
 ### Sample Output
 
@@ -118,44 +91,6 @@ INFO:root:Listening
 
 ## Install
 
-### System Requirements
-
-```bash
-sudo apt-get install libatlas-dev pulseaudio-utils pulseaudio cython
-```
-
-### Pre-trained models
-
-You can install English model ```kaldi-chain-zamia-speech-en``` or german model ```kaldi-chain-zamia-speech-de```
-
-Refered as ```kaldi-chain-zamia-speech-XX``` bellow
-
-#### Raspbian 9 (stretch) on a Raspberry Pi 2/3
-```bash
-echo "deb http://goofy.zamia.org/repo-ai/raspbian/stretch/armhf/ ./" >/etc/apt/sources.list.d/zamia-ai.list
-wget -qO - http://goofy.zamia.org/repo-ai/raspbian/stretch/armhf/bofh.asc | sudo apt-key add -
-apt-get update
-apt-get install kaldi-chain-zamia-speech-XX
-```
-
-#### Debian 9 (stretch, amd64)
-```bash
-apt-get install apt-transport-https
-echo "deb http://goofy.zamia.org/repo-ai/debian/stretch/amd64/ ./" >/etc/apt/sources.list.d/zamia-ai.list
-wget -qO - http://goofy.zamia.org/repo-ai/debian/stretch/amd64/bofh.asc | sudo apt-key add -
-apt-get update
-apt-get install kaldi-chain-zamia-speech-XX
-```
-
-#### CentOS 7 (amd64)
-```bash
-cd /etc/yum.repos.d
-wget http://goofy.zamia.org/zamia-speech/misc/zamia-ai-centos.repo
-yum install kaldi-chain-zamia-speech-XX
-```
-
-### Pip Package
-
 install from pip
 
 ```bash
@@ -168,6 +103,8 @@ or from source
 pip install git+https://github.com/JarbasAl/kaldi_spotter
 ```
 
-## Credits
+### Pre-trained models
 
-[zamia-speech](https://github.com/gooofy/zamia-speech)
+You can download official models from [alphacephei](https://alphacephei.com/vosk/models)
+
+Models for Iberian Languages can be found [here](https://github.com/JarbasIberianLanguageResources/iberian-vosk) 

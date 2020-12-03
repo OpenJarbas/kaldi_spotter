@@ -23,10 +23,16 @@ class KaldiWWSpotter(EventEmitter):
         model = self.config.get("model_folder")
         if not model or not isdir(model):
             raise ModelNotFound
-        self.vad_agressiveness = 2
-        self.sample_rate = 16000
-        self.start_thresh = 1
-        self.end_thresh = 3
+
+        listener_config = self.config.get("listener") or \
+                          {"vad_agressiveness": 2,
+                           "sample_rate": 16000,
+                           "start_thresh": 1,
+                           "end_thresh": 3}
+        self.vad_agressiveness = listener_config["vad_agressiveness"]
+        self.sample_rate = listener_config["sample_rate"]
+        self.start_thresh = listener_config["start_thresh"]
+        self.end_thresh = listener_config["end_thresh"]
 
         self.model = KaldiModel(model)
         self.kaldi = KaldiRecognizer(self.model, self.sample_rate)
@@ -156,7 +162,6 @@ class KaldiWWSpotter(EventEmitter):
                     self.feed_chunk(data)
             else:
                 if self.speaking and silence_counter >= self.end_thresh:
-
                     event_data = {"timesteps": counter,
                                   "agressiveness": self.vad_agressiveness}
                     self.emit_detection_event("vad.end", event_data)
