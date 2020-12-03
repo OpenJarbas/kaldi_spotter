@@ -1,61 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from kaldi_spotter.settings import CONFIG
 from kaldi_spotter.utils import play_sound, fuzzy_match
-from kaldi_spotter.exceptions import ModelNotFound
+from kaldi_spotter.exceptions import ModelNotFound, InvalidFileFormat
 import logging
-from nltools.pulserecorder import PulseRecorder
-from nltools.vad import VAD, BUFFER_DURATION
-from nltools.asr import ASR, ASR_ENGINE_NNET3
+from json_database import JsonStorage
+from vosk import Model as KaldiModel, KaldiRecognizer
 from pyee import EventEmitter
 import json
-from math import exp
-from os.path import isdir
+from os.path import isdir, isfile
+import pyaudio
+from kaldi_spotter.vad import vad_collector
 
 
 class KaldiWWSpotter(EventEmitter):
-    _default_models = ["/opt/kaldi/model/kaldi-generic-en-tdnn_250",
-                       "/opt/kaldi/model/kaldi-generic-de-tdnn_250"]
+    def __init__(self, config):
+        super().__init__()
+        if isinstance(config, dict):
+            self.config = config
+        elif isinstance(config, str):
+            self.config = JsonStorage(config)
 
-    def __init__(self, source=None, volume=None, aggressiveness=None,
-                 model_dir=None, lang=None, config=CONFIG):
-        EventEmitter.__init__(self)
-        self.config = config
-
-        # ensure default values
-        for k in CONFIG["listener"]:
-            if k not in self.config["listener"]:
-                self.config["listener"][k] = CONFIG["listener"][k]
-
-        volume = volume or self.config["listener"]["default_volume"]
-        aggressiveness = aggressiveness or self.config["listener"][
-            "default_aggressiveness"]
-        model_dir = model_dir or self.config["listener"]["default_model_dir"]
-        self.lang = lang or self.config["lang"]
-        if "-" in self.lang:
-            self.lang = self.lang.split("-")[0]
-
-        if "{lang}" in model_dir:
-            model_dir = model_dir.format(lang=self.lang)
-
-        if not isdir(model_dir):
-            if model_dir in self._default_models:
-                logging.error("you need to install the package: "
-                              "kaldi-chain-zamia-speech-{lang}".format(
-                    lang=self.lang))
+        model = self.config.get("model_folder")
+        if not model or not isdir(model):
             raise ModelNotFound
+        self.vad_agressiveness = 2
+        self.sample_rate = 16000
+        self.start_thresh = 1
+        self.end_thresh = 3
 
-        self.rec = PulseRecorder(source_name=source, volume=volume)
-        self.vad = VAD(aggressiveness=aggressiveness)
-        logging.info("Loading model from %s ..." % model_dir)
+        self.model = KaldiModel(model)
+        self.kaldi = KaldiRecognizer(self.model, self.sample_rate)
+        self._hotwords = dict(self.config.get("hotwords", {}))
 
-        self.asr = ASR(engine=ASR_ENGINE_NNET3, model_dir=model_dir,
-                       kaldi_beam=self.config["listener"]["default_beam"],
-                       kaldi_acoustic_scale=self.config["listener"][
-                           "default_acoustic_scale"],
-                       kaldi_frame_subsampling_factor=self.config["listener"][
-                           "default_frame_subsampling_factor"])
-        self._hotwords = dict(self.config["hotwords"])
+        self.running = False
+        self.speaking = False
+        self.result = None
 
     def add_hotword(self, name, config=None):
         config = config or {"transcriptions": [name], "intent": name}
@@ -69,70 +48,124 @@ class KaldiWWSpotter(EventEmitter):
     def hotwords(self):
         return self._hotwords
 
-    def _detection_event(self, message_type, message_data):
-        serialized_message = json.dumps(
-            {"type": message_type, "data": message_data})
+    def emit_detection_event(self, message_type, message_data=None):
+        message_data = message_data or self.result
+        serialized_message = json.dumps(message_data)
         logging.debug(serialized_message)
         self.emit(message_type, serialized_message)
 
-    def _process_transcription(self, user_utt, confidence=0.99):
+    def _process_transcription(self):
+        user_utt = self.result.get("text")
+
         for hotw in self.hotwords:
             if not self.hotwords[hotw].get("active"):
                 continue
             rule = self.hotwords[hotw].get("rule", "sensitivity")
             s = 1 - self.hotwords[hotw].get("sensitivity", 0.2)
-            confidence = (confidence + s) / 2
-            for w in self.hotwords[hotw]["transcriptions"]:
+            confidence = (self.confidence + s) / 2
 
-                if (w in user_utt and rule == "in") or \
-                        (user_utt.startswith(w) and rule == "start") or \
-                        (user_utt.endswith(w) and rule == "end") or \
-                        (fuzzy_match(w,
-                                     user_utt) >= s and rule == "sensitivity") or \
-                        (w == user_utt and rule == "equal"):
+            for w in self.hotwords[hotw]["transcriptions"]:
+                found = False
+
+                if w in user_utt and rule == "in":
+                    found = True
+                elif user_utt.startswith(w) and rule == "start":
+                    found = True
+                elif user_utt.endswith(w) and rule == "end":
+                    found = True
+                elif w == user_utt and rule == "equal":
+                    found = True
+                elif rule == "sensitivity" and fuzzy_match(w, user_utt) >= s:
+                    found = True
+
+                if found:
                     yield {"hotword": hotw,
                            "utterance": user_utt,
                            "confidence": confidence,
                            "intent": self.hotwords[hotw]["intent"]}
 
-    def _detect_ww(self, user_utt, confidence=0.99):
-        for hw_data in self._process_transcription(user_utt, confidence):
+    def _hotword_events(self):
+        for hw_data in self._process_transcription():
             sound = self.hotwords[hw_data["hotword"]].get("sound")
             if sound and isfile(sound):
                 play_sound(sound)
-            self._detection_event("hotword", hw_data)
+            self.emit_detection_event("hotword", hw_data)
 
-    def decode_wav_file(self, wav_file):
-        user_utt, confidence = self.asr.decode_wav_file(wav_file)
-        confidence = 1 - exp(-1 * confidence)
-        return user_utt, confidence
+    def feed_chunk(self, chunk):
+        if self.kaldi.AcceptWaveform(chunk):
+            self.result = json.loads(self.kaldi.Result())
+        else:
+            transcript_data = json.loads(self.kaldi.PartialResult())
+            if transcript_data != self.result:
+                self.result = transcript_data
+                if transcript_data["partial"]:
+                    self.emit_detection_event("transcription.partial")
 
-    def wav_file_hotwords(self, wav_file):
-        user_utt, confidence = self.decode_wav_file(wav_file)
-        return list(self._process_transcription(user_utt, confidence))
+    def finalize(self):
+        final = json.loads(self.kaldi.FinalResult())
+        if final["text"]:
+            self.result = final
+        if self.result.get("text"):
+            self.emit_detection_event("transcription")
+            self._hotword_events()
+        else:
+            self.emit_detection_event("transcription.failure",
+                                      {"error": "empty text transcription"})
+        data = dict(self.result)
+        self.result = {}
+        self.speaking = False
+        return data
+
+    @property
+    def confidence(self):
+        try:
+            return sum([w["conf"] for w in self.result["result"]]) / len(
+                self.result["result"])
+        except:
+            return 0
 
     def run(self):
 
-        self.rec.start_recording()
+        p = pyaudio.PyAudio()
+        stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000,
+                        input=True, frames_per_buffer=8000)
+        stream.start_stream()
         logging.info("Listening")
 
-        while True:
+        counter = 0
+        silence_counter = 0
 
-            samples = self.rec.get_samples()
-
-            audio, finalize = self.vad.process_audio(samples)
-
-            if not audio:
+        prev_chunk = None
+        self.running = True
+        while self.running:
+            data = stream.read(4000)
+            if len(data) == 0:
                 continue
+            is_speaking = vad_collector(data, self.sample_rate,
+                                        self.vad_agressiveness)
+            if is_speaking:
+                counter += 1
+                silence_counter = 0
+                if counter >= self.start_thresh and not self.speaking:
+                    self.speaking = True
+                    event_data = {"thresh": self.start_thresh,
+                                  "agressiveness": self.vad_agressiveness}
+                    self.emit_detection_event("vad.start", event_data)
+                    self.feed_chunk(prev_chunk)
+                if self.speaking:
+                    self.feed_chunk(data)
+            else:
+                if self.speaking and silence_counter >= self.end_thresh:
 
-            logging.debug('decoding audio len=%d finalize=%s audio=%s' % (
-                len(audio), repr(finalize), audio[0].__class__))
+                    event_data = {"timesteps": counter,
+                                  "agressiveness": self.vad_agressiveness}
+                    self.emit_detection_event("vad.end", event_data)
+                    self.finalize()
 
-            user_utt, confidence = self.asr.decode(audio, finalize,
-                                                   stream_id="mic")
-            confidence = 1 - exp(-1 * confidence)
-            if finalize and user_utt:
-                self._detection_event("transcription",
-                                      {"utterance": user_utt,
-                                       "confidence": confidence})
-                self._detect_ww(user_utt, confidence)
+                silence_counter += 1
+                counter = 0
+            prev_chunk = data
+
+    def stop(self):
+        # TODO close pyaudio stream
+        self.running = False

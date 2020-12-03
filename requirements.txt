@@ -1,4 +1,6 @@
-pyee==5.0.0
+pyee>=5.0.0
 numpy
-cython
-py-nltools
+vosk
+json_database
+webrtcvad
+pyaudio
